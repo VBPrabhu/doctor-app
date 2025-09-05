@@ -201,7 +201,7 @@ class PaymentApiService {
       print('Verifying payment with backend: Order ID: $orderId, Payment ID: $paymentId');
       
       // Get auth token
-      final String token = await _authService.getToken();
+      final String token = _authService.token;
       print('Using JWT token with length: ${token.length}');
       print('Token prefix: ${token.substring(0, 20)}...');
       

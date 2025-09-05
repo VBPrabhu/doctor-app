@@ -249,11 +249,11 @@ class _CartScreenState extends State<CartScreen> {
               ),
 
 
-            Spacer(),
-            totalView(netTotal:netTotal,
+            const Spacer(),
+            totalView(
+              netTotal: netTotal,
               subtotal: subtotal,
-                tax: tax
-
+              tax: tax,
             ),
 
             10.toHeight(),
@@ -283,10 +283,9 @@ class _CartScreenState extends State<CartScreen> {
               ),
             ),
 
-            20.toHeight()
+            20.toHeight(),
           ],
-        ).toHorizontalPadding(horizontalPadding: 16)
-
+        ).toHorizontalPadding(horizontalPadding: 16),
     );
 
 
