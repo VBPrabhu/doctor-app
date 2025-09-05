@@ -1,0 +1,134 @@
+name: iOS Device Deployment
+
+on:
+  push:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      device_udid:
+        description: 'Device UDID (optional - will use any connected device if not provided)'
+        required: false
+        type: string
+
+jobs:
+  build-and-deploy-to-device:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.3'
+        channel: 'stable'
+        cache: true
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+        
+    - name: Import Code-Signing Certificates
+      if: ${{ secrets.IOS_P12_BASE64 }}
+      uses: Apple-Actions/import-codesign-certs@v2
+      with:
+        p12-file-base64: ${{ secrets.IOS_P12_BASE64 }}
+        p12-password: ${{ secrets.IOS_P12_PASSWORD }}
+        
+    - name: Download Provisioning Profiles
+      if: ${{ secrets.APPSTORE_ISSUER_ID }}
+      uses: Apple-Actions/download-provisioning-profiles@v1
+      with:
+        bundle-id: com.example.doctorapp
+        issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
+        api-key-id: ${{ secrets.APPSTORE_KEY_ID }}
+        api-private-key: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        
+    - name: Build iOS App for Device
+      run: |
+        # Build for device (requires code signing)
+        flutter build ios --release
+        
+    - name: Create IPA for Distribution
+      run: |
+        # Create IPA file
+        mkdir -p build/ios/ipa
+        cd build/ios/iphoneos
+        zip -r ../ipa/doctorapp.ipa Runner.app
+        
+    - name: Generate Installation Instructions
+      run: |
+        cat > install_instructions.md << 'EOF'
+        # Install Doctor App on Your Apple Device
+        
+        ## Method 1: TestFlight (Recommended)
+        1. The app has been uploaded to TestFlight
+        2. Check your email for TestFlight invitation
+        3. Install TestFlight app from App Store if not already installed
+        4. Open TestFlight invitation and install the app
+        
+        ## Method 2: Direct Installation (Development)
+        1. Download the IPA file from the artifacts
+        2. Use Xcode or Apple Configurator 2 to install:
+           - Connect your device to a Mac with Xcode
+           - Open Xcode → Window → Devices and Simulators
+           - Select your device → Click "+" → Select the IPA file
+        
+        ## Method 3: Over-the-Air Installation
+        1. Download the IPA file
+        2. Upload to a service like Diawi.com or TestFlight
+        3. Open the installation link on your device
+        4. Follow the installation prompts
+        
+        ## Requirements:
+        - Your device UDID must be registered in the provisioning profile
+        - Device must trust the developer certificate
+        - iOS version compatibility: iOS 12.0+
+        EOF
+        
+    - name: Upload IPA Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-app-${{ github.run_number }}
+        path: |
+          build/ios/ipa/doctorapp.ipa
+          install_instructions.md
+        retention-days: 30
+        
+    - name: Upload to TestFlight (if configured)
+      if: ${{ secrets.APPSTORE_ISSUER_ID && github.ref == 'refs/heads/main' }}
+      uses: Apple-Actions/upload-testflight-build@v1
+      with:
+        app-path: build/ios/ipa/doctorapp.ipa
+        issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
+        api-key-id: ${{ secrets.APPSTORE_KEY_ID }}
+        api-private-key: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        
+    - name: Create QR Code for Installation
+      run: |
+        # Install qrencode if available
+        if command -v qrencode &> /dev/null; then
+          echo "Creating QR code for installation..."
+          # This would contain the installation URL
+          echo "https://github.com/VBPrabhu/doctor-app/actions/runs/${{ github.run_id }}" | qrencode -o installation_qr.png
+        else
+          echo "QR code generation skipped - qrencode not available"
+        fi
+        
+    - name: Summary
+      run: |
+        echo "## 📱 iOS App Build Complete!"
+        echo "### Options to install on your Apple device:"
+        echo "1. **Download IPA** from artifacts and use Xcode/Apple Configurator"
+        echo "2. **TestFlight** (if configured with Apple Developer account)"
+        echo "3. **Over-the-Air** installation via Diawi or similar service"
+        echo ""
+        echo "### Next Steps:"
+        echo "- Download the IPA file from the 'Artifacts' section"
+        echo "- Follow the installation instructions in the downloaded package"
+        echo "- For TestFlight: Check your email for invitation"
