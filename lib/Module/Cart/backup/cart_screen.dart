@@ -250,7 +250,6 @@ class _CartScreenState extends State<CartScreen> {
                 },
               ),
             ),
-          ),
 
           const Spacer(),
           totalView(
