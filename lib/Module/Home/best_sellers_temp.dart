@@ -1,5 +1,8 @@
   // Best Sellers Section
-  Widget _buildBestSellers(BuildContext context) {
+  import 'package:flutter/material.dart';
+import 'package:doctorapp/AppCommon/app_colors.dart';
+
+Widget _buildBestSellers(BuildContext context) {
     final bestSellers = [
       {
         'name': 'Retinol Night Cream',
