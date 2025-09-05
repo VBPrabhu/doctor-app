@@ -87,7 +87,8 @@ class _CartScreenState extends State<CartScreen> {
         body: Column(
           children: [
             20.toHeight(),
-            ListView.separated(
+            Expanded(
+              child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: products.length,
@@ -246,6 +247,7 @@ class _CartScreenState extends State<CartScreen> {
 
                 ],
               ),
+            ),
 
 
             const Spacer(),
