@@ -84,12 +84,11 @@ class _CartScreenState extends State<CartScreen> {
             ),
           ],
         ),
-      ),
       body: Column(
         children: [
-            20.toHeight(),
-            Expanded(
-              child: ListView.separated(
+          20.toHeight(),
+          Expanded(
+            child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: products.length,
@@ -249,45 +248,45 @@ class _CartScreenState extends State<CartScreen> {
                 ],
               ),
             ),
+          ),
 
+          const Spacer(),
+          totalView(
+            netTotal: netTotal,
+            subtotal: subtotal,
+            tax: tax,
+          ),
 
-            const Spacer(),
-            totalView(
-              netTotal: netTotal,
-              subtotal: subtotal,
-              tax: tax,
-            ),
+          10.toHeight(),
 
-            10.toHeight(),
-
-            Container(
-              width: double.infinity,
-              height: 50,
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  foregroundColor: Colors.black,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+          Container(
+            width: double.infinity,
+            height: 50,
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: Colors.black,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
-                  'PROCEED TO CHECKOUT',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
+              ),
+              child: const Text(
+                'PROCEED TO CHECKOUT',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
                 ),
               ),
             ),
+          ),
 
-            20.toHeight(),
-          ],
-        ).toHorizontalPadding(horizontalPadding: 16),
+          20.toHeight(),
+        ],
+      ).toHorizontalPadding(horizontalPadding: 16),
     );
 
 
