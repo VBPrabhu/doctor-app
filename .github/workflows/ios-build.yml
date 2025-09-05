@@ -1,0 +1,154 @@
+name: iOS Build and Deploy
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.3'
+        channel: 'stable'
+        cache: true
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Analyze code
+      run: flutter analyze
+      
+    - name: Run tests
+      run: flutter test
+      
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+        
+    - name: Build iOS app (Debug)
+      run: |
+        flutter build ios --debug --no-codesign
+        
+    - name: Build iOS app (Release - if needed)
+      if: github.ref == 'refs/heads/main'
+      run: |
+        flutter build ios --release --no-codesign
+        
+    - name: Archive build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-build-${{ github.run_number }}
+        path: |
+          build/ios/iphoneos/
+          build/ios/iphonesimulator/
+        retention-days: 30
+        
+    - name: Setup iOS Simulator
+      run: |
+        # List available simulators
+        xcrun simctl list devices available
+        
+        # Boot iPhone 15 simulator (or latest available)
+        SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone 15" | head -1 | grep -o '[A-F0-9-]\{36\}')
+        if [ -z "$SIMULATOR_ID" ]; then
+          # Fallback to any available iPhone simulator
+          SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}')
+        fi
+        
+        echo "Using simulator: $SIMULATOR_ID"
+        xcrun simctl boot $SIMULATOR_ID
+        
+        # Wait for simulator to boot
+        sleep 30
+        
+    - name: Install and run app on simulator
+      run: |
+        # Get the simulator ID again
+        SIMULATOR_ID=$(xcrun simctl list devices booted | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}')
+        
+        if [ -n "$SIMULATOR_ID" ]; then
+          echo "Installing app on simulator: $SIMULATOR_ID"
+          
+          # Install the app
+          xcrun simctl install $SIMULATOR_ID build/ios/iphonesimulator/Runner.app
+          
+          # Launch the app
+          xcrun simctl launch $SIMULATOR_ID com.example.doctorapp
+          
+          # Take a screenshot
+          xcrun simctl io $SIMULATOR_ID screenshot screenshot.png
+          
+          echo "App launched successfully on iOS Simulator"
+        else
+          echo "No booted simulator found"
+          exit 1
+        fi
+        
+    - name: Upload screenshot
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-screenshot-${{ github.run_number }}
+        path: screenshot.png
+        retention-days: 7
+
+  # Optional: Deploy to TestFlight (requires Apple Developer account and certificates)
+  deploy-testflight:
+    runs-on: macos-latest
+    needs: build-ios
+    if: github.ref == 'refs/heads/main' && false # Set to true when ready to deploy
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.3'
+        channel: 'stable'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+        
+    - name: Import Code-Signing Certificates
+      uses: Apple-Actions/import-codesign-certs@v2
+      with:
+        p12-file-base64: ${{ secrets.IOS_P12_BASE64 }}
+        p12-password: ${{ secrets.IOS_P12_PASSWORD }}
+        
+    - name: Download Provisioning Profiles
+      uses: Apple-Actions/download-provisioning-profiles@v1
+      with:
+        bundle-id: com.example.doctorapp
+        issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
+        api-key-id: ${{ secrets.APPSTORE_KEY_ID }}
+        api-private-key: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        
+    - name: Build and Archive
+      run: |
+        flutter build ipa --release
+        
+    - name: Upload to TestFlight
+      uses: Apple-Actions/upload-testflight-build@v1
+      with:
+        app-path: build/ios/ipa/doctorapp.ipa
+        issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
+        api-key-id: ${{ secrets.APPSTORE_KEY_ID }}
+        api-private-key: ${{ secrets.APPSTORE_PRIVATE_KEY }}

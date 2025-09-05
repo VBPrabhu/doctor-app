@@ -1,0 +1,2 @@
+/Users/venkat/Downloads/Downloads/doctorApp/android/app/.cxx/Debug/2k5v1v4h/x86/CMakeFiles/edit_cache.dir
+/Users/venkat/Downloads/Downloads/doctorApp/android/app/.cxx/Debug/2k5v1v4h/x86/CMakeFiles/rebuild_cache.dir
