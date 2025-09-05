@@ -292,8 +292,10 @@ class _CartScreenState extends State<CartScreen> {
   }
 
 
-  Widget totalView({subtotal,tax,
-    netTotal
+  Widget totalView({
+    required double subtotal,
+    required double tax,
+    required double netTotal,
   }) => Container(
     decoration: BoxDecoration(
       color: Colors.white,
