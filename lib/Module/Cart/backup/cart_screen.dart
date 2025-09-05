@@ -47,12 +47,12 @@ class _CartScreenState extends State<CartScreen> {
     double netTotal = subtotal + tax;
 
     return Scaffold(
-        backgroundColor: AppColors.scaffoldBgColor,
-        appBar: AppBar(
-          backgroundColor: AppColors.primaryColor,
-          elevation: 0,
-          title: Row(
-            children: [
+      backgroundColor: AppColors.scaffoldBgColor,
+      appBar: AppBar(
+        backgroundColor: AppColors.primaryColor,
+        elevation: 0,
+        title: Row(
+          children: [
               Container(
                 width: 32,
                 height: 32,
@@ -84,8 +84,9 @@ class _CartScreenState extends State<CartScreen> {
             ),
           ],
         ),
-        body: Column(
-          children: [
+      ),
+      body: Column(
+        children: [
             20.toHeight(),
             Expanded(
               child: ListView.separated(
